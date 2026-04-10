@@ -1,0 +1,209 @@
+{% set profile_src = resume_data.profile_image_render_src if pdf_mode else resume_data.profile_image_data %}
+<article class="resume-sheet" data-template="{{ resume_data.template }}">
+    {% if resume_data.name or resume_data.role or resume_data.email or resume_data.phone or resume_data.linkedin or resume_data.github %}
+    <header class="resume-header">
+        {% if resume_data.name %}
+        <h1>{{ resume_data.name }}</h1>
+        {% endif %}
+        {% if resume_data.role %}
+        <p class="resume-role">{{ resume_data.role }}</p>
+        {% endif %}
+
+        <div class="resume-meta">
+            {% for item in resume_data.contact_items %}
+            <a href="{{ item.href }}" class="resume-meta__item" target="_blank" rel="noreferrer">
+                <svg class="contact-icon" aria-hidden="true">
+                    <use href="#icon-{{ item.key }}"></use>
+                </svg>
+                <span>{{ item.value }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </header>
+    {% endif %}
+
+    <div class="resume-layout">
+        <div class="resume-main">
+            {% if resume_data.summary %}
+            <section class="resume-section resume-section--summary">
+                <h2>{% if resume_data.template == 'modern' %}Profile{% else %}Summary{% endif %}</h2>
+                <p>{{ resume_data.summary }}</p>
+            </section>
+            {% endif %}
+
+            {% if resume_data.work_experience %}
+            <section class="resume-section resume-section--work">
+                <h2>Work Experience</h2>
+                <div class="resume-list">
+                    {% for work in resume_data.work_experience %}
+                    <article class="resume-item">
+                        <div class="resume-item__headline">
+                            <div class="resume-item__title-group">
+                                {% if work.role or work.company %}
+                                <h3>{{ work.role }}{% if work.role and work.company %} - {% endif %}{{ work.company }}</h3>
+                                {% endif %}
+                            </div>
+                            {% if work.start_date or work.end_date %}
+                            <span class="resume-item__date">
+                                {{ work.start_date }}{% if work.start_date and work.end_date %} - {% endif %}{{ work.end_date }}
+                            </span>
+                            {% endif %}
+                        </div>
+                        {% if work.description %}
+                        <p>{{ work.description }}</p>
+                        {% endif %}
+                    </article>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
+
+            {% if resume_data.projects %}
+            <section class="resume-section resume-section--projects">
+                <h2>Projects</h2>
+                <div class="resume-list">
+                    {% for project in resume_data.projects %}
+                    <article class="resume-item">
+                        <div class="resume-item__headline">
+                            <div class="resume-item__title-group">
+                                {% if project.title %}
+                                <h3>{{ project.title }}</h3>
+                                {% endif %}
+                                {% if project.url %}
+                                <p class="resume-item__subtitle">{{ project.url }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if project.description %}
+                        <p>{{ project.description }}</p>
+                        {% endif %}
+                        {% if project.technologies %}
+                        <p class="resume-item__meta">Tech: {{ project.technologies }}</p>
+                        {% endif %}
+                    </article>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
+
+            {% if resume_data.certifications %}
+            <section class="resume-section resume-section--certifications">
+                <h2>Certifications</h2>
+                <div class="resume-list">
+                    {% for certification in resume_data.certifications %}
+                    <article class="resume-item resume-item--inline">
+                        <div class="resume-item__headline">
+                            <div class="resume-item__title-group">
+                                {% if certification.title or certification.issuer %}
+                                <h3>{{ certification.title }}{% if certification.title and certification.issuer %} - {% endif %}{{ certification.issuer }}</h3>
+                                {% endif %}
+                                {% if certification.url %}
+                                <p class="resume-item__subtitle">{{ certification.url }}</p>
+                                {% endif %}
+                            </div>
+                            {% if certification.year %}
+                            <span class="resume-item__date">{{ certification.year }}</span>
+                            {% endif %}
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
+
+            {% if resume_data.achievements %}
+            <section class="resume-section resume-section--achievements">
+                <h2>Achievements</h2>
+                <ul class="resume-bullets">
+                    {% for achievement in resume_data.achievements %}
+                    <li>{{ achievement.text }}</li>
+                    {% endfor %}
+                </ul>
+            </section>
+            {% endif %}
+
+            <div class="resume-custom-sections">
+                {% for section in resume_data.custom_sections %}
+                <section class="resume-section">
+                    <h2>{{ section.title }}</h2>
+                    <p>{{ section.content }}</p>
+                </section>
+                {% endfor %}
+            </div>
+        </div>
+
+        <aside class="resume-sidebar">
+            {% if profile_src and resume_data.template == 'modern' %}
+            <div class="resume-sidebar__profile">
+                <img src="{{ profile_src }}" alt="Profile photo">
+            </div>
+            {% endif %}
+
+            {% if resume_data.contact_items %}
+            <section class="resume-section resume-section--sidebar resume-section--contact">
+                <h2>Contact</h2>
+                <div class="contact-list">
+                    {% for item in resume_data.contact_items %}
+                    <a href="{{ item.href }}" class="contact-list__item" target="_blank" rel="noreferrer">
+                        <svg class="contact-icon" aria-hidden="true">
+                            <use href="#icon-{{ item.key }}"></use>
+                        </svg>
+                        <span>{{ item.value }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
+
+            {% if resume_data.education %}
+            <section class="resume-section resume-section--sidebar resume-section--education">
+                <h2>Education</h2>
+                <div class="resume-list">
+                    {% for entry in resume_data.education %}
+                    <article class="resume-item">
+                        <div class="resume-item__headline">
+                            <div class="resume-item__title-group">
+                                {% if entry.degree or entry.specialization %}
+                                <h3>{{ entry.degree }}{% if entry.degree and entry.specialization %} in {% endif %}{{ entry.specialization }}</h3>
+                                {% elif entry.institution %}
+                                <h3>{{ entry.institution }}</h3>
+                                {% endif %}
+                                {% if entry.institution and (entry.degree or entry.specialization) %}
+                                <p class="resume-item__subtitle">{{ entry.institution }}</p>
+                                {% endif %}
+                            </div>
+                            {% if entry.start_year or entry.end_year or entry.score %}
+                            <div class="resume-item__aside">
+                                {% if entry.start_year or entry.end_year %}
+                                <span class="resume-item__date">
+                                    {{ entry.start_year }}{% if entry.start_year and entry.end_year %} - {% endif %}{{ entry.end_year }}
+                                </span>
+                                {% endif %}
+                                {% if entry.score %}
+                                <span class="resume-item__aside-meta">CGPA / Score: {{ entry.score }}</span>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
+
+            {% if resume_data.skill_groups %}
+            <section class="resume-section resume-section--sidebar resume-section--skills">
+                <h2>Skills</h2>
+                <div class="skills-group-list">
+                    {% for group in resume_data.skill_groups %}
+                    <p class="skills-group">
+                        <span class="skills-group__label">{{ group["label"] }}:</span>
+                        <span>{{ group["items"]|join(", ") }}</span>
+                    </p>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
+        </aside>
+    </div>
+</article>

@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Builder</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="resume-builder-page">
+{% include 'resume/_icon_sprite.html' %}
+
+<header class="builder-topbar">
+    <div class="brand-mark">
+        <span class="brand-mark__icon">RF</span>
+        <span class="brand-mark__text">ResumeForge</span>
+    </div>
+
+    <div class="topbar-actions">
+        <button type="button" class="toolbar-button">Resume Score</button>
+        <button type="button" class="toolbar-button">Gap Analyzer</button>
+        <button type="submit" form="resume-form" name="submission_mode" value="download" class="toolbar-button toolbar-button--primary">Download PDF</button>
+    </div>
+</header>
+
+<main class="builder-shell">
+    <section class="editor-column">
+        <div class="editor-intro">
+            <h1>Build Your Resume</h1>
+            <p>Fill in your details below. Your resume updates in real time.</p>
+        </div>
+
+        <form method="POST" id="resume-form" class="resume-editor">
+            <input type="hidden" name="template" id="template" value="{{ resume_data.template }}">
+            <input type="hidden" name="profile_image_data" id="profile_image_data" value="{{ resume_data.profile_image_data }}">
+            <input type="hidden" name="education_json" id="education_json">
+            <input type="hidden" name="projects_json" id="projects_json">
+            <input type="hidden" name="work_experience_json" id="work_experience_json">
+            <input type="hidden" name="certifications_json" id="certifications_json">
+            <input type="hidden" name="achievements_json" id="achievements_json">
+            <input type="hidden" name="custom_sections_json" id="custom_sections_json">
+
+            <section class="template-selector">
+                <button type="button" class="template-card{% if resume_data.template == 'classic' %} is-active{% endif %}" data-template-card="classic">
+                    <span class="template-card__title">Classic</span>
+                    <span class="template-card__copy">Traditional single-column layout</span>
+                </button>
+                <button type="button" class="template-card{% if resume_data.template == 'modern' %} is-active{% endif %}" data-template-card="modern">
+                    <span class="template-card__title">Modern</span>
+                    <span class="template-card__copy">Two-column feel with accent header</span>
+                </button>
+                <button type="button" class="template-card{% if resume_data.template == 'minimal' %} is-active{% endif %}" data-template-card="minimal">
+                    <span class="template-card__title">Minimal</span>
+                    <span class="template-card__copy">Clean, understated design</span>
+                </button>
+            </section>
+
+            <details class="editor-section" open>
+                <summary>Personal Information</summary>
+                <div class="editor-section__body">
+                    <label class="field-group field-group--full">
+                        <span class="field-label">Full Name</span>
+                        <input type="text" id="name" name="name" value="{{ resume_data.name }}" placeholder="KORUTLA SRUJANA">
+                    </label>
+
+                    <div class="field-grid field-grid--two">
+                        <label class="field-group">
+                            <span class="field-label">Role / Job Title</span>
+                            <input type="text" id="role" name="role" value="{{ resume_data.role }}" placeholder="MARKETING MANAGER">
+                        </label>
+                        <div class="field-group">
+                            <span class="field-label">Profile Image</span>
+                            <input type="file" id="profile_image_file" accept="image/*">
+                            <div class="upload-hint">Upload a headshot for the modern template.</div>
+                            <div class="form-image-preview{% if resume_data.profile_image_data %} has-image{% endif %}" id="form-image-preview">
+                                {% if resume_data.profile_image_data %}
+                                <img src="{{ resume_data.profile_image_data }}" alt="Profile preview">
+                                {% else %}
+                                <span>No image selected</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="field-grid field-grid--two">
+                        <label class="field-group">
+                            <span class="field-label">Email</span>
+                            <input type="email" id="email" name="email" value="{{ resume_data.email }}" placeholder="name@example.com">
+                        </label>
+                        <label class="field-group">
+                            <span class="field-label">Phone</span>
+                            <input type="tel" id="phone" name="phone" value="{{ resume_data.phone }}" placeholder="9999999999">
+                        </label>
+                    </div>
+
+                    <div class="field-grid field-grid--two">
+                        <label class="field-group">
+                            <span class="field-label">LinkedIn</span>
+                            <input type="text" inputmode="url" id="linkedin" name="linkedin" value="{{ resume_data.linkedin }}" placeholder="linkedin.com/in/yourname">
+                        </label>
+                        <label class="field-group">
+                            <span class="field-label">GitHub</span>
+                            <input type="text" inputmode="url" id="github" name="github" value="{{ resume_data.github }}" placeholder="github.com/yourname">
+                        </label>
+                    </div>
+                </div>
+            </details>
+
+            <details class="editor-section" open>
+                <summary>Career Summary</summary>
+                <div class="editor-section__body">
+                    <label class="field-group field-group--full">
+                        <span class="field-label">Summary</span>
+                        <textarea id="summary" name="summary" rows="5" placeholder="Write a concise summary that highlights your strengths, impact, and career direction.">{{ resume_data.summary }}</textarea>
+                    </label>
+                </div>
+            </details>
+
+            <details class="editor-section" open>
+                <summary>Education</summary>
+                <div class="editor-section__body">
+                    <div id="education-list" class="stack-list"></div>
+                    <button type="button" class="secondary-action" data-add-entry="education">Add Education</button>
+                </div>
+            </details>
+
+            <details class="editor-section" open>
+                <summary>Skills</summary>
+                <div class="editor-section__body">
+                    <div class="field-grid field-grid--two field-grid--skills">
+                        {% for field_name, field_label in skill_fields.items() %}
+                        <label class="field-group">
+                            <span class="field-label">{{ field_label }}</span>
+                            <input
+                                type="text"
+                                id="{{ field_name }}"
+                                name="{{ field_name }}"
+                                value="{{ resume_data.skills.get(field_name, '') }}"
+                                placeholder="Enter comma-separated skills"
+                            >
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            </details>
+
+            <details class="editor-section" open>
+                <summary>Projects</summary>
+                <div class="editor-section__body">
+                    <div id="projects-list" class="stack-list"></div>
+                    <button type="button" class="secondary-action" data-add-entry="projects">Add Project</button>
+                </div>
+            </details>
+
+            <details class="editor-section" open>
+                <summary>Work Experience</summary>
+                <div class="editor-section__body">
+                    <div id="work-experience-list" class="stack-list"></div>
+                    <button type="button" class="secondary-action" data-add-entry="work_experience">Add Experience</button>
+                </div>
+            </details>
+
+            <details class="editor-section" open>
+                <summary>Certifications</summary>
+                <div class="editor-section__body">
+                    <div id="certifications-list" class="stack-list"></div>
+                    <button type="button" class="secondary-action" data-add-entry="certifications">Add Certification</button>
+                </div>
+            </details>
+
+            <details class="editor-section" open>
+                <summary>Achievements</summary>
+                <div class="editor-section__body">
+                    <div id="achievements-list" class="stack-list"></div>
+                    <button type="button" class="secondary-action" data-add-entry="achievements">Add Achievement</button>
+                </div>
+            </details>
+
+            <details class="editor-section" open>
+                <summary>Custom Sections</summary>
+                <div class="editor-section__body">
+                    <div id="custom-sections-list" class="stack-list"></div>
+                    <button type="button" class="secondary-action" data-add-entry="custom_sections">Add Custom Section</button>
+                </div>
+            </details>
+
+            <div class="editor-footer">
+                <button type="submit" name="submission_mode" value="preview" class="primary-submit">Save Resume</button>
+                <a href="/logout" class="text-link">Logout</a>
+            </div>
+        </form>
+    </section>
+
+    <aside class="preview-column">
+        <h2 class="preview-heading">Live Preview</h2>
+
+        <div class="resume-preview-frame" id="preview-box" data-template="{{ resume_data.template }}">
+            <article class="resume-sheet" id="resume-sheet">
+                <header class="resume-header" id="preview-header">
+                    <h1 id="preview-name">{{ resume_data.name }}</h1>
+                    <p class="resume-role" id="preview-role">{{ resume_data.role }}</p>
+                    <div class="resume-meta" id="preview-meta"></div>
+                </header>
+
+                <div class="resume-layout">
+                    <div class="resume-main" id="preview-main">
+                        <section class="resume-section resume-section--summary" id="preview-summary-section">
+                            <h2 id="preview-summary-title">Summary</h2>
+                            <p id="preview-summary"></p>
+                        </section>
+
+                        <section class="resume-section resume-section--work" id="preview-work-experience-section">
+                            <h2>Work Experience</h2>
+                            <div id="preview-work-experience-list" class="resume-list"></div>
+                        </section>
+
+                        <section class="resume-section resume-section--projects" id="preview-projects-section">
+                            <h2>Projects</h2>
+                            <div id="preview-projects-list" class="resume-list"></div>
+                        </section>
+
+                        <section class="resume-section resume-section--certifications" id="preview-certifications-section">
+                            <h2>Certifications</h2>
+                            <div id="preview-certifications-list" class="resume-list"></div>
+                        </section>
+
+                        <section class="resume-section resume-section--achievements" id="preview-achievements-section">
+                            <h2>Achievements</h2>
+                            <ul id="preview-achievements-list" class="resume-bullets"></ul>
+                        </section>
+
+                        <div id="preview-custom-sections" class="resume-custom-sections"></div>
+                    </div>
+
+                    <aside class="resume-sidebar" id="preview-sidebar">
+                        <div class="resume-sidebar__profile" id="preview-profile-image-wrap">
+                            <img id="preview-profile-image" alt="Profile photo">
+                        </div>
+
+                        <section class="resume-section resume-section--sidebar resume-section--contact" id="preview-contact-section">
+                            <h2>Contact</h2>
+                            <div id="preview-contact-list" class="contact-list"></div>
+                        </section>
+
+                        <section class="resume-section resume-section--sidebar resume-section--education" id="preview-education-section">
+                            <h2>Education</h2>
+                            <div id="preview-education-list" class="resume-list"></div>
+                        </section>
+
+                        <section class="resume-section resume-section--sidebar resume-section--skills" id="preview-skills-section">
+                            <h2>Skills</h2>
+                            <div id="preview-skills-list" class="skills-group-list"></div>
+                        </section>
+                    </aside>
+                </div>
+            </article>
+        </div>
+    </aside>
+</main>
+
+<script id="initial-resume-data" type="application/json">{{ resume_data|tojson }}</script>
+
+<template id="education-entry-template">
+    <article class="entry-card" data-entry-type="education">
+        <button type="button" class="entry-remove" data-remove-entry aria-label="Remove education">Remove</button>
+        <label class="field-group field-group--full">
+            <span class="field-label">Institution</span>
+            <input type="text" data-field="institution" placeholder="CVR COLLEGE OF ENGINEERING">
+        </label>
+        <div class="field-grid field-grid--two">
+            <label class="field-group">
+                <span class="field-label">Degree</span>
+                <input type="text" data-field="degree" placeholder="B.Tech">
+            </label>
+            <label class="field-group">
+                <span class="field-label">Specialization</span>
+                <input type="text" data-field="specialization" placeholder="CSE">
+            </label>
+        </div>
+        <div class="field-grid field-grid--three">
+            <label class="field-group">
+                <span class="field-label">Start Year</span>
+                <input type="text" data-field="start_year" placeholder="2024">
+            </label>
+            <label class="field-group">
+                <span class="field-label">End Year</span>
+                <input type="text" data-field="end_year" placeholder="2028">
+            </label>
+            <label class="field-group">
+                <span class="field-label">CGPA / Score</span>
+                <input type="text" data-field="score" placeholder="9.8">
+            </label>
+        </div>
+    </article>
+</template>
+
+<template id="projects-entry-template">
+    <article class="entry-card" data-entry-type="projects">
+        <button type="button" class="entry-remove" data-remove-entry aria-label="Remove project">Remove</button>
+        <div class="field-grid field-grid--two">
+            <label class="field-group">
+                <span class="field-label">Project Title</span>
+                <input type="text" data-field="title" placeholder="Resume Builder">
+            </label>
+            <label class="field-group">
+                <span class="field-label">Project URL</span>
+                <input type="text" inputmode="url" data-field="url" placeholder="project-link.com">
+            </label>
+        </div>
+        <label class="field-group field-group--full">
+            <span class="field-label">Description</span>
+            <textarea data-field="description" rows="3" placeholder="Describe what the project does and the impact it creates."></textarea>
+        </label>
+        <label class="field-group field-group--full">
+            <span class="field-label">Tech Stack</span>
+            <input type="text" data-field="technologies" placeholder="HTML, CSS, JavaScript, Flask">
+        </label>
+    </article>
+</template>
+
+<template id="work-experience-entry-template">
+    <article class="entry-card" data-entry-type="work_experience">
+        <button type="button" class="entry-remove" data-remove-entry aria-label="Remove work experience">Remove</button>
+        <div class="field-grid field-grid--two">
+            <label class="field-group">
+                <span class="field-label">Company</span>
+                <input type="text" data-field="company" placeholder="ABC Technologies">
+            </label>
+            <label class="field-group">
+                <span class="field-label">Role</span>
+                <input type="text" data-field="role" placeholder="Software Developer Intern">
+            </label>
+        </div>
+        <div class="field-grid field-grid--two">
+            <label class="field-group">
+                <span class="field-label">Start Date</span>
+                <input type="text" data-field="start_date" placeholder="Jan 2025">
+            </label>
+            <label class="field-group">
+                <span class="field-label">End Date</span>
+                <input type="text" data-field="end_date" placeholder="Apr 2025 / Present">
+            </label>
+        </div>
+        <label class="field-group field-group--full">
+            <span class="field-label">Highlights</span>
+            <textarea data-field="description" rows="3" placeholder="Mention outcomes, ownership, and measurable impact."></textarea>
+        </label>
+    </article>
+</template>
+
+<template id="certifications-entry-template">
+    <article class="entry-card" data-entry-type="certifications">
+        <button type="button" class="entry-remove" data-remove-entry aria-label="Remove certification">Remove</button>
+        <div class="field-grid field-grid--two">
+            <label class="field-group">
+                <span class="field-label">Certificate</span>
+                <input type="text" data-field="title" placeholder="EBOX JAVA">
+            </label>
+            <label class="field-group">
+                <span class="field-label">Issuer</span>
+                <input type="text" data-field="issuer" placeholder="CVR College of Engineering">
+            </label>
+        </div>
+        <div class="field-grid field-grid--two">
+            <label class="field-group">
+                <span class="field-label">Certificate URL</span>
+                <input type="text" inputmode="url" data-field="url" placeholder="certificate-link.com">
+            </label>
+            <label class="field-group">
+                <span class="field-label">Year</span>
+                <input type="text" data-field="year" placeholder="2025">
+            </label>
+        </div>
+    </article>
+</template>
+
+<template id="achievements-entry-template">
+    <article class="entry-card entry-card--compact" data-entry-type="achievements">
+        <button type="button" class="entry-remove" data-remove-entry aria-label="Remove achievement">Remove</button>
+        <label class="field-group field-group--full">
+            <span class="field-label">Achievement</span>
+            <input type="text" data-field="text" placeholder="Won National Level Hackathon">
+        </label>
+    </article>
+</template>
+
+<template id="custom-sections-entry-template">
+    <article class="entry-card" data-entry-type="custom_sections">
+        <button type="button" class="entry-remove" data-remove-entry aria-label="Remove custom section">Remove</button>
+        <label class="field-group field-group--full">
+            <span class="field-label">Section Title</span>
+            <input type="text" data-field="title" placeholder="Volunteer Work">
+        </label>
+        <label class="field-group field-group--full">
+            <span class="field-label">Section Content</span>
+            <textarea data-field="content" rows="4" placeholder="Add the details you want in this section."></textarea>
+        </label>
+    </article>
+</template>
+
+<script src="{{ url_for('static', filename='js/live_preview.js') }}"></script>
+
+</body>
+</html>

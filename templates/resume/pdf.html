@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume PDF</title>
+    <style>{{ inline_css|safe }}</style>
+</head>
+<body class="resume-builder-page pdf-export-page">
+{% include 'resume/_icon_sprite.html' %}
+
+<main class="pdf-shell">
+    {% include 'resume/_resume_document.html' %}
+</main>
+
+<pre id="pdf-link-metadata" aria-hidden="true"></pre>
+<script>
+window.addEventListener('load', function () {
+    window.requestAnimationFrame(function () {
+        window.setTimeout(function () {
+            const shell = document.querySelector('.pdf-shell');
+            const sheet = document.querySelector('.resume-sheet');
+            const metadataNode = document.getElementById('pdf-link-metadata');
+            if (!metadataNode || !shell || !sheet) {
+                return;
+            }
+
+            sheet.style.transformOrigin = 'top left';
+            sheet.style.transform = 'scale(1)';
+
+            const widthScale = shell.clientWidth / sheet.offsetWidth;
+            const heightScale = shell.clientHeight / sheet.offsetHeight;
+            const scale = Math.min(1, widthScale, heightScale);
+            if (scale < 1) {
+                sheet.style.transform = 'scale(' + scale + ')';
+            }
+
+            const links = Array.from(document.querySelectorAll('a[href]'))
+                .map(function (anchor) {
+                    const rect = anchor.getBoundingClientRect();
+                    return {
+                        href: anchor.href,
+                        left: rect.left,
+                        top: rect.top,
+                        width: rect.width,
+                        height: rect.height
+                    };
+                })
+                .filter(function (link) {
+                    return link.width > 0 && link.height > 0;
+                });
+
+            metadataNode.textContent = JSON.stringify({
+                pageWidth: document.documentElement.clientWidth,
+                pageHeight: document.documentElement.clientHeight,
+                links: links
+            });
+        }, 100);
+    });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Preview</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="resume-builder-page">
+{% include 'resume/_icon_sprite.html' %}
+
+<header class="builder-topbar">
+    <div class="brand-mark">
+        <span class="brand-mark__icon">RF</span>
+        <span class="brand-mark__text">ResumeForge</span>
+    </div>
+
+    <div class="topbar-actions">
+        <a href="{{ url_for('resume_form') }}" class="toolbar-button">Edit Resume</a>
+        <a href="{{ url_for('logout') }}" class="toolbar-button">Logout</a>
+        <a href="{{ url_for('download_pdf') }}" class="toolbar-button toolbar-button--primary">Download PDF</a>
+    </div>
+</header>
+
+<main class="preview-page-shell">
+    <section class="preview-page-intro">
+        <h1>Your Resume Preview</h1>
+        <p>The saved preview only shows sections that contain actual content.</p>
+    </section>
+
+    <section class="preview-page-card">
+        {% include 'resume/_resume_document.html' %}
+    </section>
+</main>
+
+</body>
+</html>
