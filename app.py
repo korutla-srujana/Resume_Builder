@@ -136,15 +136,22 @@ def build_profile_image_render_src(image_value):
 def build_pdf_html(data):
     css_path = Path(app.root_path) / "static" / "css" / "style.css"
     inline_css = css_path.read_text(encoding="utf-8") + """
+@page {
+    size: A4;
+    margin: 0;
+}
+
 html, body {
     margin: 0;
     padding: 0;
-    width: 794px;
-    min-height: 1123px;
+    width: 100%;
+    height: 100%;
     background: #ffffff;
     overflow: hidden;
 }
 body.pdf-export-page {
+    margin: 0 !important;
+    padding: 0 !important;
     background: white !important;
 }
 html,
@@ -155,19 +162,134 @@ body.pdf-export-page * {
 }
 .pdf-shell {
     box-sizing: border-box;
-    width: 794px;
-    min-height: 1123px;
-    padding: 18px;
+    width: 100%;
+    height: 100%;
+    margin: 0 !important;
+    padding: 0 !important;
     background: #ffffff;
+    overflow: hidden;
+    position: relative;
+}
+.pdf-stage {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
 }
 .pdf-shell .resume-sheet {
     box-sizing: border-box;
-    width: 758px;
-    min-height: 1087px;
+    width: 100%;
+    min-height: 100%;
+    max-width: none;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
+.pdf-export-page .resume-sheet {
+    padding: 20px 22px 22px !important;
+}
+.pdf-export-page .resume-header {
+    padding-bottom: 12px !important;
+}
+.pdf-export-page .resume-header h1 {
+    font-size: 2rem !important;
+}
+.pdf-export-page .resume-role {
+    margin-top: 4px !important;
+    font-size: 0.88rem !important;
+}
+.pdf-export-page .resume-meta {
+    margin-top: 8px !important;
+    gap: 6px 10px !important;
+}
+.pdf-export-page .resume-meta__item {
+    font-size: 0.72rem !important;
+}
+.pdf-export-page .resume-section {
+    padding-top: 8px !important;
+}
+.pdf-export-page .resume-section + .resume-section {
+    margin-top: 8px !important;
+}
+.pdf-export-page .resume-section h2 {
+    padding-bottom: 6px !important;
+    font-size: 0.98rem !important;
+}
+.pdf-export-page .resume-section p {
+    margin-top: 7px !important;
+    line-height: 1.45 !important;
+    font-size: 0.84rem !important;
+}
+.pdf-export-page .resume-list {
+    gap: 8px !important;
+    margin-top: 8px !important;
+}
+.pdf-export-page .resume-item {
+    gap: 3px !important;
+}
+.pdf-export-page .resume-item h3 {
+    font-size: 0.88rem !important;
+    line-height: 1.3 !important;
+}
+.pdf-export-page .resume-item__subtitle,
+.pdf-export-page .resume-item__meta,
+.pdf-export-page .resume-item__date,
+.pdf-export-page .resume-item__aside-meta,
+.pdf-export-page .skills-group,
+.pdf-export-page .contact-list__item,
+.pdf-export-page .resume-bullets li {
+    font-size: 0.76rem !important;
+    line-height: 1.35 !important;
+}
+.pdf-export-page .resume-item__headline {
+    gap: 10px !important;
+}
+.pdf-export-page .resume-bullets {
+    gap: 4px !important;
+    margin: 8px 0 0 !important;
+    padding-left: 18px !important;
+}
+.pdf-export-page .skills-group-list {
+    display: grid !important;
+    gap: 6px !important;
+}
+.pdf-export-page .skills-group {
     margin: 0 !important;
 }
 #pdf-link-metadata {
     display: none !important;
+}
+
+@media print {
+    html,
+    body,
+    body.pdf-export-page {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        overflow: hidden !important;
+        background: #ffffff !important;
+    }
+
+    .pdf-shell {
+        width: 100% !important;
+        height: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+    }
+
+    .pdf-stage {
+        width: 100% !important;
+        height: 100% !important;
+        overflow: hidden !important;
+    }
+
+    .pdf-shell .resume-sheet {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+    }
 }
 """
     return render_template('resume/pdf.html', resume_data=data, inline_css=inline_css, pdf_mode=True)

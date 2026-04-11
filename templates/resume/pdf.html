@@ -10,52 +10,68 @@
 {% include 'resume/_icon_sprite.html' %}
 
 <main class="pdf-shell">
-    {% include 'resume/_resume_document.html' %}
+    <div class="pdf-stage">
+        {% include 'resume/_resume_document.html' %}
+    </div>
 </main>
 
 <pre id="pdf-link-metadata" aria-hidden="true"></pre>
 <script>
+function finalizePdfLayout() {
+    const shell = document.querySelector('.pdf-shell');
+    const stage = document.querySelector('.pdf-stage');
+    const sheet = document.querySelector('.resume-sheet');
+    const metadataNode = document.getElementById('pdf-link-metadata');
+    if (!metadataNode || !shell || !stage || !sheet) {
+        return;
+    }
+
+    sheet.style.transformOrigin = 'top left';
+    sheet.style.transform = 'translateX(0) scale(1)';
+
+    const availableWidth = shell.clientWidth;
+    const availableHeight = shell.clientHeight;
+    const naturalWidth = sheet.offsetWidth;
+    const naturalHeight = sheet.offsetHeight;
+    const widthScale = availableWidth / naturalWidth;
+    const heightScale = availableHeight / naturalHeight;
+    const scale = Math.min(1, widthScale, heightScale);
+    const offsetX = Math.max(0, (availableWidth - (naturalWidth * scale)) / 2);
+
+    if (scale < 1) {
+        sheet.style.transform = 'translateX(' + offsetX + 'px) scale(' + scale + ')';
+    }
+    stage.style.height = Math.ceil(naturalHeight * scale) + 'px';
+
+    const shellRect = shell.getBoundingClientRect();
+    const links = Array.from(document.querySelectorAll('a[href]'))
+        .map(function (anchor) {
+            const rect = anchor.getBoundingClientRect();
+            return {
+                href: anchor.href,
+                left: rect.left - shellRect.left,
+                top: rect.top - shellRect.top,
+                width: rect.width,
+                height: rect.height
+            };
+        })
+        .filter(function (link) {
+            return link.width > 0 && link.height > 0;
+        });
+
+    metadataNode.textContent = JSON.stringify({
+        pageWidth: shell.clientWidth,
+        pageHeight: shell.clientHeight,
+        links: links
+    });
+    document.body.setAttribute('data-pdf-ready', 'true');
+}
+
 window.addEventListener('load', function () {
     window.requestAnimationFrame(function () {
-        window.setTimeout(function () {
-            const shell = document.querySelector('.pdf-shell');
-            const sheet = document.querySelector('.resume-sheet');
-            const metadataNode = document.getElementById('pdf-link-metadata');
-            if (!metadataNode || !shell || !sheet) {
-                return;
-            }
-
-            sheet.style.transformOrigin = 'top left';
-            sheet.style.transform = 'scale(1)';
-
-            const widthScale = shell.clientWidth / sheet.offsetWidth;
-            const heightScale = shell.clientHeight / sheet.offsetHeight;
-            const scale = Math.min(1, widthScale, heightScale);
-            if (scale < 1) {
-                sheet.style.transform = 'scale(' + scale + ')';
-            }
-
-            const links = Array.from(document.querySelectorAll('a[href]'))
-                .map(function (anchor) {
-                    const rect = anchor.getBoundingClientRect();
-                    return {
-                        href: anchor.href,
-                        left: rect.left,
-                        top: rect.top,
-                        width: rect.width,
-                        height: rect.height
-                    };
-                })
-                .filter(function (link) {
-                    return link.width > 0 && link.height > 0;
-                });
-
-            metadataNode.textContent = JSON.stringify({
-                pageWidth: document.documentElement.clientWidth,
-                pageHeight: document.documentElement.clientHeight,
-                links: links
-            });
-        }, 100);
+        window.requestAnimationFrame(function () {
+            finalizePdfLayout();
+        });
     });
 });
 </script>

@@ -138,6 +138,7 @@ def generate_pdf(html_content, filename="resume.pdf"):
             f"--window-size={PAGE_WIDTH_PX},{PAGE_HEIGHT_PX}",
             "--force-device-scale-factor=2",
             "--run-all-compositor-stages-before-draw",
+            "--virtual-time-budget=2000",
             f"--screenshot={screenshot_path}",
             file_url,
         ]
