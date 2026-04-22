@@ -16,7 +16,7 @@
     </div>
 
     <div class="topbar-actions">
-        <button type="button" class="toolbar-button">Resume Score</button>
+        <button type="button" id="resumeScoreBtn" class="toolbar-button">Resume Score</button>
         <button type="button" class="toolbar-button">Gap Analyzer</button>
         <button type="submit" form="resume-form" name="submission_mode" value="download" class="toolbar-button toolbar-button--primary">Download PDF</button>
     </div>
@@ -256,6 +256,53 @@
         </div>
     </aside>
 </main>
+
+<div class="ats-modal" id="atsScoreModal" hidden>
+    <div class="ats-modal__backdrop" data-ats-close></div>
+    <div class="ats-modal__panel" role="dialog" aria-modal="true" aria-labelledby="atsScoreTitle">
+        <button type="button" class="ats-modal__close" data-ats-close aria-label="Close ATS score modal">&times;</button>
+        <h2 id="atsScoreTitle">ATS Resume Score</h2>
+        <p class="ats-modal__description">This analysis compares your resume with industry requirements for your selected job role.</p>
+
+        <div class="ats-modal__body">
+            <div class="ats-score-card">
+                <p class="ats-score-card__status" id="atsScoreStatus">ATS compatibility will appear here.</p>
+                <span class="ats-score-card__label">Score</span>
+                <div class="ats-score-badge" id="atsScoreValue">-- / 100</div>
+                <p class="ats-score-card__meta" id="atsRoleMatch">Target role: Not analyzed yet</p>
+            </div>
+
+            <div class="ats-result-block">
+                <h3>Score Breakdown</h3>
+                <ul id="atsBreakdownList" class="ats-result-list">
+                    <li>Run the ATS analysis to see detailed scoring factors.</li>
+                </ul>
+            </div>
+
+            <div class="ats-result-block">
+                <h3>Missing Skills</h3>
+                <p class="ats-result-block__intro">You are missing the following important skills:</p>
+                <ul id="atsMissingSkillsList" class="ats-result-list">
+                    <li>No analysis yet.</li>
+                </ul>
+            </div>
+
+            <div class="ats-result-block">
+                <h3>Suggestions</h3>
+                <ul id="atsSuggestionsList" class="ats-result-list">
+                    <li>Click Resume Score to analyze your resume.</li>
+                </ul>
+            </div>
+
+            <div class="ats-result-block">
+                <h3>Analysis Notes</h3>
+                <ul id="atsAnalysisNotesList" class="ats-result-list">
+                    <li>ATS feedback will appear here.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script id="initial-resume-data" type="application/json">{{ resume_data|tojson }}</script>
 

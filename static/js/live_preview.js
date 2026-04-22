@@ -42,6 +42,15 @@ if (form) {
     const previewAchievementsSection = document.getElementById("preview-achievements-section");
     const previewAchievementsList = document.getElementById("preview-achievements-list");
     const previewCustomSections = document.getElementById("preview-custom-sections");
+    const resumeScoreBtn = document.getElementById("resumeScoreBtn");
+    const atsScoreModal = document.getElementById("atsScoreModal");
+    const atsScoreStatus = document.getElementById("atsScoreStatus");
+    const atsScoreValue = document.getElementById("atsScoreValue");
+    const atsRoleMatch = document.getElementById("atsRoleMatch");
+    const atsBreakdownList = document.getElementById("atsBreakdownList");
+    const atsMissingSkillsList = document.getElementById("atsMissingSkillsList");
+    const atsSuggestionsList = document.getElementById("atsSuggestionsList");
+    const atsAnalysisNotesList = document.getElementById("atsAnalysisNotesList");
 
     const templateCards = [...document.querySelectorAll("[data-template-card]")];
 
@@ -572,6 +581,173 @@ if (form) {
         });
     }
 
+    function getAllSkills() {
+        return skillFieldIds.flatMap((fieldId) => splitSkillItems(document.getElementById(fieldId).value));
+    }
+
+    function getEntryValues(type, field) {
+        return collectEntries(type)
+            .map((entry) => trimValue(entry[field]))
+            .filter(Boolean);
+    }
+
+    function getSectionsPresent() {
+        const sections = [];
+
+        if (trimValue(document.getElementById("summary").value)) {
+            sections.push("summary");
+        }
+
+        if (getAllSkills().length) {
+            sections.push("skills");
+        }
+
+        Object.keys(sectionConfig).forEach((type) => {
+            if (collectEntries(type).length) {
+                sections.push(type);
+            }
+        });
+
+        return sections;
+    }
+
+    function renderResultList(target, items, emptyMessage) {
+        target.innerHTML = "";
+
+        if (!items.length) {
+            target.appendChild(createTextElement("li", "", emptyMessage));
+            return;
+        }
+
+        items.forEach((item) => {
+            target.appendChild(createTextElement("li", "", item));
+        });
+    }
+
+    function renderBreakdown(items) {
+        const breakdownItems = Array.isArray(items)
+            ? items.map((item) => `${item.label}: ${item.score}/${item.max_score} - ${item.detail}`)
+            : [];
+
+        renderResultList(atsBreakdownList, breakdownItems, "Detailed score breakdown is not available.");
+    }
+
+    function getScoreMessage(score) {
+        if (score > 80) {
+            return `Strong ATS compatibility (${score}/100)`;
+        }
+
+        if (score >= 50) {
+            return `Moderate ATS compatibility (${score}/100)`;
+        }
+
+        return `Low ATS compatibility (${score}/100)`;
+    }
+
+    function setScoreColor(score) {
+        atsScoreValue.classList.remove("ats-score-badge--high", "ats-score-badge--medium", "ats-score-badge--low", "high-score", "medium-score", "low-score");
+        atsScoreStatus.classList.remove("high-score", "medium-score", "low-score");
+
+        if (score > 80) {
+            atsScoreValue.classList.add("ats-score-badge--high");
+            atsScoreValue.classList.add("high-score");
+            atsScoreStatus.classList.add("high-score");
+            return;
+        }
+
+        if (score >= 50) {
+            atsScoreValue.classList.add("ats-score-badge--medium");
+            atsScoreValue.classList.add("medium-score");
+            atsScoreStatus.classList.add("medium-score");
+            return;
+        }
+
+        atsScoreValue.classList.add("ats-score-badge--low");
+        atsScoreValue.classList.add("low-score");
+        atsScoreStatus.classList.add("low-score");
+    }
+
+    function renderSuggestions(items) {
+        const suggestions = Array.isArray(items) ? [...items] : [];
+        suggestions.push("Tip: Tailor your resume for each job role to improve ATS score.");
+        renderResultList(atsSuggestionsList, suggestions, "Tip: Tailor your resume for each job role to improve ATS score.");
+    }
+
+    function openAtsModal() {
+        atsScoreModal.hidden = false;
+        document.body.classList.add("modal-open");
+    }
+
+    function closeAtsModal() {
+        atsScoreModal.hidden = true;
+        document.body.classList.remove("modal-open");
+    }
+
+    async function handleResumeScore() {
+        const payload = {
+            role: trimValue(document.getElementById("role").value),
+            summary: trimValue(document.getElementById("summary").value),
+            skills: getAllSkills(),
+            sections: getSectionsPresent(),
+            education_count: collectEntries("education").length,
+            project_count: collectEntries("projects").length,
+            work_experience_count: collectEntries("work_experience").length,
+            certification_count: collectEntries("certifications").length,
+            achievement_count: collectEntries("achievements").length,
+            project_descriptions: getEntryValues("projects", "description"),
+            work_descriptions: getEntryValues("work_experience", "description"),
+            achievement_texts: getEntryValues("achievements", "text"),
+        };
+
+        atsScoreValue.textContent = "Analyzing...";
+        atsScoreStatus.textContent = "Reviewing ATS compatibility...";
+        atsScoreStatus.classList.remove("high-score", "medium-score", "low-score");
+        atsRoleMatch.textContent = "Target role: Analyzing current resume";
+        atsScoreValue.classList.remove("ats-score-badge--high", "ats-score-badge--medium", "ats-score-badge--low", "high-score", "medium-score", "low-score");
+        renderBreakdown([]);
+        renderResultList(atsMissingSkillsList, [], "Reviewing your skills...");
+        renderSuggestions([]);
+        renderResultList(atsAnalysisNotesList, [], "Reviewing resume depth and keyword usage...");
+        openAtsModal();
+
+        try {
+            const response = await fetch("/ats_score", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.error || "Unable to calculate ATS score right now.");
+            }
+
+            atsScoreValue.textContent = `${result.score} / 100`;
+            atsScoreStatus.textContent = getScoreMessage(result.score);
+            atsRoleMatch.textContent = result.matched_role
+                ? `Target role: ${result.matched_role}`
+                : "Target role: General ATS analysis";
+            setScoreColor(result.score);
+            renderBreakdown(result.breakdown || []);
+            renderResultList(atsMissingSkillsList, result.missing_skills || [], "No major skill gaps found.");
+            renderSuggestions(result.suggestions || []);
+            renderResultList(atsAnalysisNotesList, result.analysis_notes || [], "No extra analysis notes.");
+        } catch (error) {
+            atsScoreValue.textContent = "Unavailable";
+            atsScoreStatus.textContent = "ATS analysis is currently unavailable.";
+            atsRoleMatch.textContent = "Target role: Analysis unavailable";
+            atsScoreValue.classList.add("ats-score-badge--low");
+            atsScoreValue.classList.add("low-score");
+            atsScoreStatus.classList.add("low-score");
+            renderBreakdown([]);
+            renderResultList(atsMissingSkillsList, [], "Could not complete analysis.");
+            renderSuggestions([error.message]);
+            renderResultList(atsAnalysisNotesList, [], "Try again after updating your resume.");
+        }
+    }
+
     function renderAll() {
         syncStructuredInputs();
         renderHeader();
@@ -621,6 +797,22 @@ if (form) {
     form.addEventListener("submit", () => {
         syncStructuredInputs();
     });
+
+    if (resumeScoreBtn && atsScoreModal) {
+        resumeScoreBtn.addEventListener("click", handleResumeScore);
+
+        atsScoreModal.addEventListener("click", (event) => {
+            if (event.target.matches("[data-ats-close]")) {
+                closeAtsModal();
+            }
+        });
+
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape" && !atsScoreModal.hidden) {
+                closeAtsModal();
+            }
+        });
+    }
 
     if (profileImageFileInput) {
         profileImageFileInput.addEventListener("change", (event) => {

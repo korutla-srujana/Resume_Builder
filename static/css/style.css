@@ -28,6 +28,10 @@ body {
     color: var(--text);
 }
 
+body.modal-open {
+    overflow: hidden;
+}
+
 a {
     color: inherit;
     text-decoration: none;
@@ -168,6 +172,163 @@ select {
     background: var(--navy);
     border-color: var(--navy);
     color: #fff;
+}
+
+.ats-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+}
+
+.ats-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(17, 24, 39, 0.48);
+}
+
+.ats-modal__panel {
+    position: relative;
+    width: min(620px, calc(100% - 32px));
+    max-height: calc(100vh - 48px);
+    margin: 24px auto;
+    padding: 24px;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.24);
+    border: 1px solid rgba(215, 222, 232, 0.9);
+    overflow-y: auto;
+}
+
+.ats-modal__close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--heading);
+    font-size: 1.3rem;
+    cursor: pointer;
+}
+
+.ats-modal__panel h2,
+.ats-result-block h3 {
+    margin: 0;
+    color: var(--heading);
+}
+
+.ats-modal__description {
+    margin: 10px 0 0;
+    color: var(--text-muted);
+    font-size: 0.96rem;
+    line-height: 1.5;
+}
+
+.ats-modal__panel h2 {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1.7rem;
+    padding-right: 44px;
+}
+
+.ats-modal__body {
+    display: grid;
+    gap: 18px;
+    margin-top: 18px;
+}
+
+.ats-score-card,
+.ats-result-block {
+    padding: 16px 18px;
+    background: var(--surface-muted);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+}
+
+.ats-score-card__label {
+    display: block;
+    margin-bottom: 10px;
+    color: var(--text-muted);
+    font-size: 0.88rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.ats-score-card__status {
+    margin: 0 0 10px;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--heading);
+}
+
+.ats-score-card__meta {
+    margin: 12px 0 0;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
+
+.ats-score-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 140px;
+    min-height: 54px;
+    padding: 10px 18px;
+    border-radius: 14px;
+    background: #e5e7eb;
+    color: #1f2937;
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+
+.ats-score-badge--high {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.ats-score-badge--medium {
+    background: #fef3c7;
+    color: #a16207;
+}
+
+.ats-score-badge--low {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.ats-result-block {
+    display: grid;
+    gap: 10px;
+}
+
+.ats-result-block__intro {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
+
+.ats-result-list {
+    margin: 0;
+    padding-left: 20px;
+    color: var(--text);
+}
+
+.ats-result-list li + li {
+    margin-top: 8px;
+}
+
+.high-score {
+    color: #166534;
+}
+
+.medium-score {
+    color: #a16207;
+}
+
+.low-score {
+    color: #b91c1c;
 }
 
 .builder-shell,
