@@ -43,7 +43,12 @@ if (form) {
     const previewAchievementsList = document.getElementById("preview-achievements-list");
     const previewCustomSections = document.getElementById("preview-custom-sections");
     const resumeScoreBtn = document.getElementById("resumeScoreBtn");
+    const gapAnalysisBtn = document.getElementById("gapAnalysisBtn");
     const atsScoreModal = document.getElementById("atsScoreModal");
+    const atsScoreTitle = document.getElementById("atsScoreTitle");
+    const atsScoreDescription = document.getElementById("atsScoreDescription");
+    const resumeScoreSection = document.getElementById("resumeScoreSection");
+    const gapAnalysisSection = document.getElementById("gapAnalysisSection");
     const atsScoreStatus = document.getElementById("atsScoreStatus");
     const atsScoreValue = document.getElementById("atsScoreValue");
     const atsRoleMatch = document.getElementById("atsRoleMatch");
@@ -51,6 +56,16 @@ if (form) {
     const atsMissingSkillsList = document.getElementById("atsMissingSkillsList");
     const atsSuggestionsList = document.getElementById("atsSuggestionsList");
     const atsAnalysisNotesList = document.getElementById("atsAnalysisNotesList");
+    const gapRoleLabel = document.getElementById("gapRoleLabel");
+    const gapWarningMessage = document.getElementById("gapWarningMessage");
+    const gapPercentageValue = document.getElementById("gapPercentageValue");
+    const gapProgressFill = document.getElementById("gapProgressFill");
+    const gapMatchedSkillsList = document.getElementById("gapMatchedSkillsList");
+    const gapMissingSkillsList = document.getElementById("gapMissingSkillsList");
+    const gapRecommendationsList = document.getElementById("gapRecommendationsList");
+    let activeAnalysisView = null;
+    let resumeScoreRequestId = 0;
+    let gapAnalysisRequestId = 0;
 
     const templateCards = [...document.querySelectorAll("[data-template-card]")];
 
@@ -611,6 +626,26 @@ if (form) {
         return sections;
     }
 
+    function buildAnalysisPayload() {
+        return {
+            role: trimValue(document.getElementById("role").value),
+            target_role: trimValue(document.getElementById("target_role").value),
+            summary: trimValue(document.getElementById("summary").value),
+            skills: getAllSkills(),
+            sections: getSectionsPresent(),
+            education_count: collectEntries("education").length,
+            project_count: collectEntries("projects").length,
+            work_experience_count: collectEntries("work_experience").length,
+            certification_count: collectEntries("certifications").length,
+            achievement_count: collectEntries("achievements").length,
+            project_descriptions: getEntryValues("projects", "description"),
+            work_descriptions: getEntryValues("work_experience", "description"),
+            achievement_texts: getEntryValues("achievements", "text"),
+            certification_titles: getEntryValues("certifications", "title"),
+            custom_section_content: getEntryValues("custom_sections", "content"),
+        };
+    }
+
     function renderResultList(target, items, emptyMessage) {
         target.innerHTML = "";
 
@@ -673,6 +708,82 @@ if (form) {
         renderResultList(atsSuggestionsList, suggestions, "Tip: Tailor your resume for each job role to improve ATS score.");
     }
 
+    function setAnalysisView(view) {
+        activeAnalysisView = view;
+
+        if (resumeScoreSection) {
+            resumeScoreSection.style.display = view === "resumeScore" ? "block" : "none";
+        }
+
+        if (gapAnalysisSection) {
+            gapAnalysisSection.style.display = view === "gapAnalysis" ? "block" : "none";
+        }
+
+        if (atsScoreTitle) {
+            atsScoreTitle.textContent = view === "gapAnalysis" ? "Gap Analysis" : "ATS Resume Score";
+        }
+
+        if (atsScoreDescription) {
+            atsScoreDescription.textContent = view === "gapAnalysis"
+                ? "Compare your resume against the selected target role."
+                : "Resume Score gives general ATS guidance for your current resume.";
+        }
+    }
+
+    function resetResumeScoreState() {
+        atsScoreValue.textContent = "-- / 100";
+        atsScoreStatus.textContent = "ATS compatibility will appear here.";
+        atsRoleMatch.textContent = "Target role: Not analyzed yet";
+        atsScoreValue.classList.remove("ats-score-badge--high", "ats-score-badge--medium", "ats-score-badge--low", "high-score", "medium-score", "low-score");
+        atsScoreStatus.classList.remove("high-score", "medium-score", "low-score");
+        renderBreakdown([]);
+        renderResultList(atsMissingSkillsList, [], "No analysis yet.");
+        renderSuggestions([]);
+        renderResultList(atsAnalysisNotesList, [], "ATS feedback will appear here.");
+    }
+
+    function setGapProgress(gapPercentage) {
+        const safeValue = Math.max(0, Math.min(100, Math.round((Number(gapPercentage) || 0) * 100)));
+        gapPercentageValue.textContent = `${safeValue}%`;
+        gapProgressFill.style.width = `${safeValue}%`;
+    }
+
+    function resetGapAnalysisState() {
+        gapRoleLabel.textContent = "Selected role: Not analyzed yet";
+        gapWarningMessage.hidden = true;
+        gapWarningMessage.textContent = "Please select a target role for gap analysis";
+        setGapProgress(0);
+        renderResultList(gapMatchedSkillsList, [], "Matched skills will appear here.");
+        renderResultList(gapMissingSkillsList, [], "Missing role-based skills will appear here.");
+        renderResultList(gapRecommendationsList, [], "Choose a target role to receive role-specific recommendations.");
+    }
+
+    function renderGapAnalysis(result) {
+        const matchedSkills = Array.isArray(result.matched_skills)
+            ? result.matched_skills.map((item) => `\u2714 ${item}`)
+            : [];
+        const missingSkills = Array.isArray(result.missing_skills)
+            ? result.missing_skills.map((item) => `\u274C ${item}`)
+            : [];
+
+        gapWarningMessage.hidden = true;
+        gapRoleLabel.textContent = `Selected role: ${result.role}`;
+        setGapProgress(result.gap_percentage);
+        renderResultList(gapMatchedSkillsList, matchedSkills, "No matching role skills were detected yet.");
+        renderResultList(gapMissingSkillsList, missingSkills, "No major skill gaps found for this target role.");
+        renderResultList(gapRecommendationsList, result.recommendations || [], "No extra recommendations available.");
+    }
+
+    function showGapWarning(message) {
+        gapRoleLabel.textContent = "Selected role: Not ready";
+        gapWarningMessage.hidden = false;
+        gapWarningMessage.textContent = message;
+        setGapProgress(0);
+        renderResultList(gapMatchedSkillsList, [], "Select a role to compare matched skills.");
+        renderResultList(gapMissingSkillsList, [], "Select a role to review missing skills.");
+        renderResultList(gapRecommendationsList, [], message);
+    }
+
     function openAtsModal() {
         atsScoreModal.hidden = false;
         document.body.classList.add("modal-open");
@@ -683,32 +794,29 @@ if (form) {
         document.body.classList.remove("modal-open");
     }
 
-    async function handleResumeScore() {
-        const payload = {
-            role: trimValue(document.getElementById("role").value),
-            summary: trimValue(document.getElementById("summary").value),
-            skills: getAllSkills(),
-            sections: getSectionsPresent(),
-            education_count: collectEntries("education").length,
-            project_count: collectEntries("projects").length,
-            work_experience_count: collectEntries("work_experience").length,
-            certification_count: collectEntries("certifications").length,
-            achievement_count: collectEntries("achievements").length,
-            project_descriptions: getEntryValues("projects", "description"),
-            work_descriptions: getEntryValues("work_experience", "description"),
-            achievement_texts: getEntryValues("achievements", "text"),
-        };
+    function showResumeScore() {
+        setAnalysisView("resumeScore");
+        resetResumeScoreState();
+        openAtsModal();
+    }
 
+    function showGapAnalysis() {
+        setAnalysisView("gapAnalysis");
+        resetGapAnalysisState();
+        openAtsModal();
+    }
+
+    async function handleResumeScore() {
+        const payload = buildAnalysisPayload();
+        const requestId = ++resumeScoreRequestId;
+
+        showResumeScore();
         atsScoreValue.textContent = "Analyzing...";
         atsScoreStatus.textContent = "Reviewing ATS compatibility...";
-        atsScoreStatus.classList.remove("high-score", "medium-score", "low-score");
         atsRoleMatch.textContent = "Target role: Analyzing current resume";
-        atsScoreValue.classList.remove("ats-score-badge--high", "ats-score-badge--medium", "ats-score-badge--low", "high-score", "medium-score", "low-score");
-        renderBreakdown([]);
         renderResultList(atsMissingSkillsList, [], "Reviewing your skills...");
         renderSuggestions([]);
         renderResultList(atsAnalysisNotesList, [], "Reviewing resume depth and keyword usage...");
-        openAtsModal();
 
         try {
             const response = await fetch("/ats_score", {
@@ -724,6 +832,10 @@ if (form) {
                 throw new Error(result.error || "Unable to calculate ATS score right now.");
             }
 
+            if (requestId !== resumeScoreRequestId || activeAnalysisView !== "resumeScore") {
+                return;
+            }
+
             atsScoreValue.textContent = `${result.score} / 100`;
             atsScoreStatus.textContent = getScoreMessage(result.score);
             atsRoleMatch.textContent = result.matched_role
@@ -731,10 +843,14 @@ if (form) {
                 : "Target role: General ATS analysis";
             setScoreColor(result.score);
             renderBreakdown(result.breakdown || []);
-            renderResultList(atsMissingSkillsList, result.missing_skills || [], "No major skill gaps found.");
+            renderResultList(atsMissingSkillsList, result.missing_skills || [], result.missing_skills_message || "Role not specified \u2013 showing general analysis");
             renderSuggestions(result.suggestions || []);
             renderResultList(atsAnalysisNotesList, result.analysis_notes || [], "No extra analysis notes.");
         } catch (error) {
+            if (requestId !== resumeScoreRequestId || activeAnalysisView !== "resumeScore") {
+                return;
+            }
+
             atsScoreValue.textContent = "Unavailable";
             atsScoreStatus.textContent = "ATS analysis is currently unavailable.";
             atsRoleMatch.textContent = "Target role: Analysis unavailable";
@@ -745,6 +861,46 @@ if (form) {
             renderResultList(atsMissingSkillsList, [], "Could not complete analysis.");
             renderSuggestions([error.message]);
             renderResultList(atsAnalysisNotesList, [], "Try again after updating your resume.");
+        }
+    }
+
+    async function handleGapAnalysis() {
+        const payload = buildAnalysisPayload();
+        const requestId = ++gapAnalysisRequestId;
+
+        showGapAnalysis();
+        gapRoleLabel.textContent = "Selected role: Analyzing current resume";
+        gapWarningMessage.hidden = true;
+        setGapProgress(0);
+        renderResultList(gapMatchedSkillsList, [], "Reviewing matched skills...");
+        renderResultList(gapMissingSkillsList, [], "Reviewing missing skills...");
+        renderResultList(gapRecommendationsList, [], "Generating role-based recommendations...");
+
+        try {
+            const response = await fetch("/gap_analysis", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.error || "Unable to complete gap analysis right now.");
+            }
+
+            if (requestId !== gapAnalysisRequestId || activeAnalysisView !== "gapAnalysis") {
+                return;
+            }
+
+            renderGapAnalysis(result);
+        } catch (error) {
+            if (requestId !== gapAnalysisRequestId || activeAnalysisView !== "gapAnalysis") {
+                return;
+            }
+
+            showGapWarning(error.message);
         }
     }
 
@@ -800,6 +956,9 @@ if (form) {
 
     if (resumeScoreBtn && atsScoreModal) {
         resumeScoreBtn.addEventListener("click", handleResumeScore);
+        if (gapAnalysisBtn) {
+            gapAnalysisBtn.addEventListener("click", handleGapAnalysis);
+        }
 
         atsScoreModal.addEventListener("click", (event) => {
             if (event.target.matches("[data-ats-close]")) {
@@ -833,7 +992,13 @@ if (form) {
         });
     }
 
+    window.showResumeScore = showResumeScore;
+    window.showGapAnalysis = showGapAnalysis;
+
     seedEntries();
+    setAnalysisView(null);
+    resetResumeScoreState();
+    resetGapAnalysisState();
     setTemplate(initialData.template || templateInput.value || "classic");
     renderAll();
 }

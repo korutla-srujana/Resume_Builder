@@ -319,6 +319,67 @@ select {
     margin-top: 8px;
 }
 
+.ats-gap-role {
+    margin: 0;
+    color: var(--heading);
+    font-weight: 600;
+}
+
+.ats-gap-warning {
+    margin: 0;
+    color: #b91c1c;
+    font-weight: 600;
+}
+
+.gap-progress {
+    display: grid;
+    gap: 10px;
+}
+
+.gap-progress__meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    color: var(--heading);
+    font-weight: 600;
+}
+
+.gap-progress__track {
+    height: 12px;
+    background: #e2e8f0;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.gap-progress__fill {
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #f59e0b 0%, #ef4444 100%);
+    transition: width 0.25s ease;
+}
+
+.gap-analysis-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.gap-analysis-grid__title {
+    margin: 0 0 10px;
+    color: var(--heading);
+    font-size: 1rem;
+}
+
+.ats-result-list--matched li::marker {
+    color: #15803d;
+}
+
+.ats-result-list--missing li::marker {
+    color: #b91c1c;
+}
+
 .high-score {
     color: #166534;
 }
@@ -494,7 +555,8 @@ select {
 }
 
 .resume-editor input,
-.resume-editor textarea {
+.resume-editor textarea,
+.resume-editor select {
     width: 100%;
     padding: 12px 14px;
     border: 1px solid var(--border-strong);
@@ -505,7 +567,8 @@ select {
 }
 
 .resume-editor input:focus,
-.resume-editor textarea:focus {
+.resume-editor textarea:focus,
+.resume-editor select:focus {
     outline: none;
     border-color: #9cb1d3;
     background: #fcfdff;
@@ -1049,6 +1112,10 @@ select {
     .template-selector,
     .field-grid--two,
     .field-grid--three {
+        grid-template-columns: 1fr;
+    }
+
+    .gap-analysis-grid {
         grid-template-columns: 1fr;
     }
 

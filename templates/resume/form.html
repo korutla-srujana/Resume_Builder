@@ -16,8 +16,8 @@
     </div>
 
     <div class="topbar-actions">
-        <button type="button" id="resumeScoreBtn" class="toolbar-button">Resume Score</button>
-        <button type="button" class="toolbar-button">Gap Analyzer</button>
+        <button type="button" id="resumeScoreBtn" class="toolbar-button" onclick="showResumeScore()">Resume Score</button>
+        <button type="button" id="gapAnalysisBtn" class="toolbar-button" onclick="showGapAnalysis()">Gap Analysis</button>
         <button type="submit" form="resume-form" name="submission_mode" value="download" class="toolbar-button toolbar-button--primary">Download PDF</button>
     </div>
 </header>
@@ -80,6 +80,17 @@
                             </div>
                         </div>
                     </div>
+
+                    <label class="field-group field-group--full">
+                        <span class="field-label">Target Role For Gap Analysis</span>
+                        <select id="target_role" name="target_role">
+                            <option value="">Select a target role</option>
+                            {% for gap_role in gap_roles %}
+                            <option value="{{ gap_role }}"{% if resume_data.target_role == gap_role %} selected{% endif %}>{{ gap_role }}</option>
+                            {% endfor %}
+                        </select>
+                        <span class="upload-hint">Required for role-based gap analysis. Resume Score still runs as a general ATS review.</span>
+                    </label>
 
                     <div class="field-grid field-grid--two">
                         <label class="field-group">
@@ -261,44 +272,88 @@
     <div class="ats-modal__backdrop" data-ats-close></div>
     <div class="ats-modal__panel" role="dialog" aria-modal="true" aria-labelledby="atsScoreTitle">
         <button type="button" class="ats-modal__close" data-ats-close aria-label="Close ATS score modal">&times;</button>
-        <h2 id="atsScoreTitle">ATS Resume Score</h2>
-        <p class="ats-modal__description">This analysis compares your resume with industry requirements for your selected job role.</p>
+        <h2 id="atsScoreTitle">Analysis</h2>
+        <p class="ats-modal__description" id="atsScoreDescription">Choose an analysis to review your resume.</p>
 
         <div class="ats-modal__body">
-            <div class="ats-score-card">
-                <p class="ats-score-card__status" id="atsScoreStatus">ATS compatibility will appear here.</p>
-                <span class="ats-score-card__label">Score</span>
-                <div class="ats-score-badge" id="atsScoreValue">-- / 100</div>
-                <p class="ats-score-card__meta" id="atsRoleMatch">Target role: Not analyzed yet</p>
+            <div id="resumeScoreSection" style="display:none;">
+                <div class="ats-score-card">
+                    <p class="ats-score-card__status" id="atsScoreStatus">ATS compatibility will appear here.</p>
+                    <span class="ats-score-card__label">Score</span>
+                    <div class="ats-score-badge" id="atsScoreValue">-- / 100</div>
+                    <p class="ats-score-card__meta" id="atsRoleMatch">Target role: Not analyzed yet</p>
+                </div>
+
+                <div class="ats-result-block">
+                    <h3>Score Breakdown</h3>
+                    <ul id="atsBreakdownList" class="ats-result-list">
+                        <li>Run the ATS analysis to see detailed scoring factors.</li>
+                    </ul>
+                </div>
+
+                <div class="ats-result-block">
+                    <h3>Missing Skills</h3>
+                    <p class="ats-result-block__intro">If the resume maps cleanly to a role profile, related skill gaps will appear here.</p>
+                    <ul id="atsMissingSkillsList" class="ats-result-list">
+                        <li>No analysis yet.</li>
+                    </ul>
+                </div>
+
+                <div class="ats-result-block">
+                    <h3>Suggestions</h3>
+                    <ul id="atsSuggestionsList" class="ats-result-list">
+                        <li>Click Resume Score to analyze your resume.</li>
+                    </ul>
+                </div>
+
+                <div class="ats-result-block">
+                    <h3>Analysis Notes</h3>
+                    <ul id="atsAnalysisNotesList" class="ats-result-list">
+                        <li>ATS feedback will appear here.</li>
+                    </ul>
+                </div>
             </div>
 
-            <div class="ats-result-block">
-                <h3>Score Breakdown</h3>
-                <ul id="atsBreakdownList" class="ats-result-list">
-                    <li>Run the ATS analysis to see detailed scoring factors.</li>
-                </ul>
-            </div>
+            <div id="gapAnalysisSection" style="display:none;">
+                <div class="ats-result-block gap-analysis-block">
+                    <h3>Gap Analysis</h3>
+                    <p class="ats-result-block__intro">Role-based comparison against your selected target job.</p>
+                    <p class="ats-gap-role" id="gapRoleLabel">Selected role: Not analyzed yet</p>
+                    <p class="ats-gap-warning" id="gapWarningMessage" hidden>Please select a target role for gap analysis</p>
 
-            <div class="ats-result-block">
-                <h3>Missing Skills</h3>
-                <p class="ats-result-block__intro">You are missing the following important skills:</p>
-                <ul id="atsMissingSkillsList" class="ats-result-list">
-                    <li>No analysis yet.</li>
-                </ul>
-            </div>
+                    <div class="gap-progress">
+                        <div class="gap-progress__meta">
+                            <span>Gap Percentage</span>
+                            <strong id="gapPercentageValue">--%</strong>
+                        </div>
+                        <div class="gap-progress__track" aria-hidden="true">
+                            <div class="gap-progress__fill" id="gapProgressFill"></div>
+                        </div>
+                    </div>
 
-            <div class="ats-result-block">
-                <h3>Suggestions</h3>
-                <ul id="atsSuggestionsList" class="ats-result-list">
-                    <li>Click Resume Score to analyze your resume.</li>
-                </ul>
-            </div>
+                    <div class="gap-analysis-grid">
+                        <div>
+                            <h4 class="gap-analysis-grid__title">Matched Skills</h4>
+                            <ul id="gapMatchedSkillsList" class="ats-result-list ats-result-list--matched">
+                                <li>Run Gap Analysis after selecting a target role.</li>
+                            </ul>
+                        </div>
 
-            <div class="ats-result-block">
-                <h3>Analysis Notes</h3>
-                <ul id="atsAnalysisNotesList" class="ats-result-list">
-                    <li>ATS feedback will appear here.</li>
-                </ul>
+                        <div>
+                            <h4 class="gap-analysis-grid__title">Missing Skills</h4>
+                            <ul id="gapMissingSkillsList" class="ats-result-list ats-result-list--missing">
+                                <li>Missing role-based skills will appear here.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="gap-analysis-grid__title">Recommendations</h4>
+                        <ul id="gapRecommendationsList" class="ats-result-list">
+                            <li>Choose a target role to receive role-specific recommendations.</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
