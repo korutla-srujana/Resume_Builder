@@ -16,6 +16,7 @@
     </div>
 
     <div class="topbar-actions">
+        <a href="{{ url_for('dashboard') }}" class="toolbar-button">Dashboard</a>
         <button type="button" id="resumeScoreBtn" class="toolbar-button" onclick="showResumeScore()">Resume Score</button>
         <button type="button" id="gapAnalysisBtn" class="toolbar-button" onclick="showGapAnalysis()">Gap Analysis</button>
         <button type="submit" form="resume-form" name="submission_mode" value="download" class="toolbar-button toolbar-button--primary">Download PDF</button>
@@ -29,9 +30,9 @@
             <p>Fill in your details below. Your resume updates in real time.</p>
         </div>
 
-        <form method="POST" id="resume-form" class="resume-editor">
-            <input type="hidden" name="template" id="template" value="{{ resume_data.template }}">
-            <input type="hidden" name="profile_image_data" id="profile_image_data" value="{{ resume_data.profile_image_data }}">
+        <form method="POST" action="{{ url_for('resume_form') }}" id="resume-form" class="resume-editor">
+            <input type="hidden" name="template" id="template" value="{{ resume_data.template or '' }}">
+            <input type="hidden" name="profile_image_data" id="profile_image_data" value="{{ resume_data.profile_image_data or '' }}">
             <input type="hidden" name="education_json" id="education_json">
             <input type="hidden" name="projects_json" id="projects_json">
             <input type="hidden" name="work_experience_json" id="work_experience_json">
@@ -59,13 +60,13 @@
                 <div class="editor-section__body">
                     <label class="field-group field-group--full">
                         <span class="field-label">Full Name</span>
-                        <input type="text" id="name" name="name" value="{{ resume_data.name }}" placeholder="KORUTLA SRUJANA">
+                        <input type="text" id="name" name="name" value="{{ resume_data.name or '' }}" placeholder="KORUTLA SRUJANA">
                     </label>
 
                     <div class="field-grid field-grid--two">
                         <label class="field-group">
                             <span class="field-label">Role / Job Title</span>
-                            <input type="text" id="role" name="role" value="{{ resume_data.role }}" placeholder="MARKETING MANAGER">
+                            <input type="text" id="role" name="role" value="{{ resume_data.role or '' }}" placeholder="MARKETING MANAGER">
                         </label>
                         <div class="field-group">
                             <span class="field-label">Profile Image</span>
@@ -95,22 +96,22 @@
                     <div class="field-grid field-grid--two">
                         <label class="field-group">
                             <span class="field-label">Email</span>
-                            <input type="email" id="email" name="email" value="{{ resume_data.email }}" placeholder="name@example.com">
+                            <input type="email" id="email" name="email" value="{{ resume_data.email or '' }}" placeholder="name@example.com">
                         </label>
                         <label class="field-group">
                             <span class="field-label">Phone</span>
-                            <input type="tel" id="phone" name="phone" value="{{ resume_data.phone }}" placeholder="9999999999">
+                            <input type="tel" id="phone" name="phone" value="{{ resume_data.phone or '' }}" placeholder="9999999999">
                         </label>
                     </div>
 
                     <div class="field-grid field-grid--two">
                         <label class="field-group">
                             <span class="field-label">LinkedIn</span>
-                            <input type="text" inputmode="url" id="linkedin" name="linkedin" value="{{ resume_data.linkedin }}" placeholder="linkedin.com/in/yourname">
+                            <input type="text" inputmode="url" id="linkedin" name="linkedin" value="{{ resume_data.linkedin or '' }}" placeholder="linkedin.com/in/yourname">
                         </label>
                         <label class="field-group">
                             <span class="field-label">GitHub</span>
-                            <input type="text" inputmode="url" id="github" name="github" value="{{ resume_data.github }}" placeholder="github.com/yourname">
+                            <input type="text" inputmode="url" id="github" name="github" value="{{ resume_data.github or '' }}" placeholder="github.com/yourname">
                         </label>
                     </div>
                 </div>
@@ -121,7 +122,7 @@
                 <div class="editor-section__body">
                     <label class="field-group field-group--full">
                         <span class="field-label">Summary</span>
-                        <textarea id="summary" name="summary" rows="5" placeholder="Write a concise summary that highlights your strengths, impact, and career direction.">{{ resume_data.summary }}</textarea>
+                        <textarea id="summary" name="summary" rows="5" placeholder="Write a concise summary that highlights your strengths, impact, and career direction.">{{ resume_data.summary or '' }}</textarea>
                     </label>
                 </div>
             </details>
@@ -195,7 +196,7 @@
             </details>
 
             <div class="editor-footer">
-                <button type="submit" name="submission_mode" value="preview" class="primary-submit">Save Resume</button>
+                <button type="button" class="primary-submit" onclick="saveResume()">Save Resume</button>
                 <a href="/logout" class="text-link">Logout</a>
             </div>
         </form>
@@ -500,6 +501,36 @@
 </template>
 
 <script src="{{ url_for('static', filename='js/live_preview.js') }}"></script>
+<script>
+function saveResume() {
+    const form = document.getElementById("resume-form");
+    if (!form) {
+        return;
+    }
+
+    if (window.syncResumeForm) {
+        window.syncResumeForm();
+    }
+
+    const formData = new FormData(form);
+
+    fetch("{{ url_for('save_resume') }}", {
+        method: "POST",
+        body: formData
+    })
+        .then((res) => {
+            if (res.redirected) {
+                window.location.href = res.url;
+                return;
+            }
+
+            if (!res.ok) {
+                throw new Error("Unable to save resume.");
+            }
+        })
+        .catch((err) => console.error(err));
+}
+</script>
 
 </body>
 </html>

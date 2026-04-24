@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="resume-builder-page">
+    <header class="builder-topbar">
+        <div class="brand-mark">
+            <span class="brand-mark__icon">RF</span>
+            <span class="brand-mark__text">ResumeForge</span>
+        </div>
+
+        <div class="topbar-actions">
+            <a href="{{ url_for('home') }}" class="toolbar-button">Resume Builder</a>
+            <a href="{{ url_for('logout') }}" class="toolbar-button">Logout</a>
+        </div>
+    </header>
+
+    <main class="builder-shell">
+        <section class="editor-column">
+            <div class="editor-intro">
+                <h1>My Saved Resumes</h1>
+                <p>Open any saved resume and continue editing it from where you left off.</p>
+            </div>
+
+            {% if resumes %}
+            {% for resume in resumes %}
+            <section class="editor-section">
+                <div class="editor-section__body">
+                    <p><strong>{{ resume[1] }}</strong></p>
+                    <p>{{ resume[2] }}</p>
+                    <a href="{{ url_for('edit_resume', id=resume[0]) }}" class="toolbar-button">Edit</a>
+                </div>
+            </section>
+            {% endfor %}
+            {% else %}
+            <section class="editor-section">
+                <div class="editor-section__body">
+                    <p>No resumes saved yet.</p>
+                </div>
+            </section>
+            {% endif %}
+        </section>
+    </main>
+</body>
+</html>

@@ -994,6 +994,7 @@ if (form) {
 
     window.showResumeScore = showResumeScore;
     window.showGapAnalysis = showGapAnalysis;
+    window.syncResumeForm = syncStructuredInputs;
 
     seedEntries();
     setAnalysisView(null);
