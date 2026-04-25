@@ -23,7 +23,7 @@
         <section class="editor-column">
             <div class="editor-intro">
                 <h1>My Saved Resumes</h1>
-                <p>Open any saved resume and continue editing it from where you left off.</p>
+                <p>Signed in as {{ session.get('user') }}. Open any saved resume and continue editing it from where you left off.</p>
             </div>
 
             {% if resumes %}

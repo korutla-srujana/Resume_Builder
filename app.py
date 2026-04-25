@@ -1,3 +1,4 @@
+from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, session, send_file, jsonify
 import base64
 import json
@@ -6,6 +7,7 @@ from pathlib import Path
 import re
 import sqlite3
 import uuid
+from werkzeug.security import check_password_hash, generate_password_hash
 from gap_analysis import analyze_gap, get_target_roles
 from scoring_logic import calculate_ats_score as calculate_ats_score_result
 from utils.pdf_generator import generate_pdf
@@ -442,6 +444,33 @@ def get_current_user_id():
     return 0
 
 
+def login_required(view_func):
+    @wraps(view_func)
+    def wrapped_view(*args, **kwargs):
+        if not session.get('user_id'):
+            return redirect(url_for('login', next=request.path))
+        return view_func(*args, **kwargs)
+
+    return wrapped_view
+
+
+def is_password_valid(stored_password, submitted_password):
+    if not stored_password:
+        return False
+
+    if stored_password.startswith(("pbkdf2:", "scrypt:")):
+        return check_password_hash(stored_password, submitted_password)
+
+    # Backward compatibility for accounts created before password hashing.
+    return stored_password == submitted_password
+
+
+def safe_next_url(next_url):
+    if next_url and next_url.startswith("/") and not next_url.startswith("//"):
+        return next_url
+    return url_for('dashboard')
+
+
 def build_resume_form_data():
     raw_data = {
         "name": request.form.get('name', ''),
@@ -622,6 +651,7 @@ init_db()
 
 # -------- HOME ROUTE --------
 @app.route('/')
+@login_required
 def home():
     session.pop('resume_data', None)
     session.pop('editing_resume_id', None)
@@ -637,16 +667,22 @@ def home():
 # -------- SIGNUP --------
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
+    if session.get('user_id'):
+        return redirect(url_for('dashboard'))
+
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        username = clean_text(request.form.get('username', ''))
+        password = request.form.get('password', '')
+
+        if not username or not password:
+            return render_template('auth/signup.html', error="Username and password are required")
 
         conn = sqlite3.connect('database.db')
         c = conn.cursor()
         try:
             c.execute(
                 "INSERT INTO users (username, password) VALUES (?, ?)",
-                (username, password)
+                (username, generate_password_hash(password))
             )
             conn.commit()
             conn.close()
@@ -660,30 +696,44 @@ def signup():
 # -------- LOGIN --------
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    if session.get('user_id'):
+        return redirect(url_for('dashboard'))
+
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        username = clean_text(request.form.get('username', ''))
+        password = request.form.get('password', '')
+        next_page = safe_next_url(request.form.get('next') or request.args.get('next'))
 
         conn = sqlite3.connect('database.db')
         c = conn.cursor()
         c.execute(
-            "SELECT * FROM users WHERE username=? AND password=?",
-            (username, password)
+            "SELECT id, username, password FROM users WHERE username=?",
+            (username,)
         )
         user = c.fetchone()
-        conn.close()
 
-        if user:
-            session['user'] = username
+        if user and is_password_valid(user[2], password):
+            if user[2] == password:
+                c.execute(
+                    "UPDATE users SET password=? WHERE id=?",
+                    (generate_password_hash(password), user[0])
+                )
+                conn.commit()
+
+            conn.close()
+            session.clear()
+            session['user'] = user[1]
             session['user_id'] = user[0]
-            return redirect(url_for('resume_form'))
+            return redirect(next_page)
         else:
-            return render_template('auth/login.html', error="Invalid credentials")
+            conn.close()
+            return render_template('auth/login.html', error="Invalid credentials", next=request.args.get('next', ''))
 
-    return render_template('auth/login.html')
+    return render_template('auth/login.html', next=request.args.get('next', ''))
 
 # -------- RESUME FORM --------
 @app.route('/resume', methods=['GET', 'POST'])
+@login_required
 def resume_form():
     if request.method == 'GET':
         return redirect(url_for('home'))
@@ -703,6 +753,7 @@ def resume_form():
 
 
 @app.route('/save_resume', methods=['POST'])
+@login_required
 def save_resume():
     data = build_resume_form_data()
     save_resume_record(data)
@@ -712,10 +763,14 @@ def save_resume():
 
 
 @app.route('/dashboard')
+@login_required
 def dashboard():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT id, name, created_at FROM resumes ORDER BY id DESC")
+    cursor.execute(
+        "SELECT id, name, created_at FROM resumes WHERE user_id=? ORDER BY id DESC",
+        (get_current_user_id(),),
+    )
     resumes = cursor.fetchall()
     conn.close()
 
@@ -723,12 +778,17 @@ def dashboard():
 
 
 @app.route('/edit_resume/<int:id>')
+@login_required
 def edit_resume(id):
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT id, name, email, phone, skills, experience, education, projects, resume_data FROM resumes WHERE id=?",
-        (id,),
+        """
+        SELECT id, name, email, phone, skills, experience, education, projects, resume_data
+        FROM resumes
+        WHERE id=? AND user_id=?
+        """,
+        (id, get_current_user_id()),
     )
     resume = cursor.fetchone()
     conn.close()
@@ -751,6 +811,7 @@ def edit_resume(id):
 
 # -------- PREVIEW PAGE --------
 @app.route('/preview')
+@login_required
 def preview():
     if 'resume_data' not in session:
         return redirect(url_for('home'))
@@ -761,6 +822,7 @@ def preview():
 
 # -------- PDF DOWNLOAD --------
 @app.route('/download')
+@login_required
 def download_pdf():
     if 'resume_data' not in session:
         return redirect(url_for('home'))
@@ -798,10 +860,7 @@ def gap_analysis():
 # -------- LOGOUT --------
 @app.route('/logout')
 def logout():
-    session.pop('user', None)
-    session.pop('user_id', None)
-    session.pop('resume_data', None)
-    session.pop('editing_resume_id', None)
+    session.clear()
     return redirect(url_for('home'))
 
 if __name__ == "__main__":

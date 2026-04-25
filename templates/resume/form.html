@@ -16,7 +16,13 @@
     </div>
 
     <div class="topbar-actions">
+        {% if session.get('user_id') %}
         <a href="{{ url_for('dashboard') }}" class="toolbar-button">Dashboard</a>
+        <a href="{{ url_for('logout') }}" class="toolbar-button">Logout</a>
+        {% else %}
+        <a href="{{ url_for('login') }}" class="toolbar-button">Login</a>
+        <a href="{{ url_for('signup') }}" class="toolbar-button">Signup</a>
+        {% endif %}
         <button type="button" id="resumeScoreBtn" class="toolbar-button" onclick="showResumeScore()">Resume Score</button>
         <button type="button" id="gapAnalysisBtn" class="toolbar-button" onclick="showGapAnalysis()">Gap Analysis</button>
         <button type="submit" form="resume-form" name="submission_mode" value="download" class="toolbar-button toolbar-button--primary">Download PDF</button>
@@ -196,8 +202,13 @@
             </details>
 
             <div class="editor-footer">
+                {% if session.get('user_id') %}
                 <button type="button" class="primary-submit" onclick="saveResume()">Save Resume</button>
-                <a href="/logout" class="text-link">Logout</a>
+                <a href="{{ url_for('logout') }}" class="text-link">Logout</a>
+                {% else %}
+                <a href="{{ url_for('login', next=url_for('home')) }}" class="primary-submit">Login to Save</a>
+                <a href="{{ url_for('signup') }}" class="text-link">Create an account</a>
+                {% endif %}
             </div>
         </form>
     </section>
