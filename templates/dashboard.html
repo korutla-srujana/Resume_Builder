@@ -3,8 +3,319 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
+    <meta name="description" content="Dashboard - Manage your resumes on ResumeForge">
+    <title>Dashboard - ResumeForge</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .editor-column {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .editor-intro {
+            margin-bottom: 48px;
+            padding: 40px;
+            background: linear-gradient(135deg, var(--accent-soft) 0%, rgba(59, 130, 246, 0.08) 100%);
+            border-radius: 20px;
+            border: 1.5px solid rgba(59, 130, 246, 0.2);
+            text-align: center;
+        }
+
+        .editor-intro h1 {
+            font-size: 2.5rem;
+            margin: 0 0 12px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .editor-intro p {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin: 8px 0 0;
+        }
+
+        .welcome-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 28px;
+            padding-top: 28px;
+            border-top: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            display: block;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .dashboard-actions {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 48px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .new-resume-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 32px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            text-decoration: none;
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.3);
+            transition: all var(--transition-base);
+        }
+
+        .new-resume-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.4);
+        }
+
+        .new-resume-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .new-resume-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .resume-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 28px;
+            margin-bottom: 40px;
+        }
+
+        .resume-card {
+            background: var(--surface);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            transition: all var(--transition-base);
+            box-shadow: var(--shadow-xs);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .resume-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+            opacity: 0;
+            transition: opacity var(--transition-base);
+        }
+
+        .resume-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.15);
+            transform: translateY(-6px);
+        }
+
+        .resume-card:hover::before {
+            opacity: 1;
+        }
+
+        .resume-card-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            background: var(--accent-soft);
+            border-radius: 12px;
+            color: var(--primary);
+            font-size: 1.5rem;
+            margin-bottom: 16px;
+        }
+
+        .resume-card h3 {
+            margin: 0 0 12px;
+            color: var(--heading);
+            font-size: 1.3rem;
+            font-weight: 700;
+            letter-spacing: -0.2px;
+            word-break: break-word;
+        }
+
+        .resume-card p {
+            margin: 0 0 12px;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .resume-card-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            margin-bottom: 16px;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .resume-card-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .resume-card-actions a {
+            flex: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 11px 14px;
+            background: linear-gradient(135deg, var(--accent-soft), rgba(59, 130, 246, 0.05));
+            color: var(--primary);
+            border: 1.5px solid rgba(59, 130, 246, 0.3);
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: all var(--transition-base);
+            cursor: pointer;
+        }
+
+        .resume-card-actions a:hover {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 80px 40px;
+            background: linear-gradient(135deg, var(--accent-soft) 0%, rgba(59, 130, 246, 0.05) 100%);
+            border-radius: 20px;
+            border: 1.5px dashed rgba(59, 130, 246, 0.2);
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .empty-state h2 {
+            color: var(--heading);
+            font-size: 1.8rem;
+            margin: 0 0 12px;
+            font-weight: 700;
+        }
+
+        .empty-state p {
+            color: var(--text-muted);
+            margin: 0 0 32px;
+            font-size: 1.05rem;
+        }
+
+        .empty-state .new-resume-btn {
+            display: inline-flex;
+        }
+
+        @media (max-width: 1024px) {
+            .editor-intro h1 {
+                font-size: 2rem;
+            }
+
+            .resume-grid {
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                gap: 20px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .editor-intro {
+                padding: 28px 20px;
+                margin-bottom: 32px;
+            }
+
+            .editor-intro h1 {
+                font-size: 1.8rem;
+            }
+
+            .editor-intro p {
+                font-size: 1rem;
+            }
+
+            .welcome-stats {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+
+            .dashboard-actions {
+                gap: 12px;
+            }
+
+            .new-resume-btn {
+                padding: 12px 24px;
+                font-size: 0.9rem;
+            }
+
+            .resume-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+
+            .resume-card {
+                padding: 20px;
+            }
+
+            .resume-card-actions {
+                gap: 8px;
+            }
+
+            .empty-state {
+                padding: 60px 20px;
+            }
+
+            .empty-state-icon {
+                font-size: 3rem;
+            }
+
+            .empty-state h2 {
+                font-size: 1.4rem;
+            }
+        }
+    </style>
 </head>
 <body class="resume-builder-page">
     <header class="builder-topbar">
@@ -22,26 +333,53 @@
     <main class="builder-shell">
         <section class="editor-column">
             <div class="editor-intro">
-                <h1>My Saved Resumes</h1>
-                <p>Signed in as {{ session.get('user') }}. Open any saved resume and continue editing it from where you left off.</p>
+                <h1>My Resumes</h1>
+                <p>Welcome back, <strong>{{ session.get('user') }}</strong>! Manage and edit your professional resumes with ease.</p>
+                
+                <div class="welcome-stats">
+                    <div class="stat-item">
+                        <span class="stat-number">{{ resumes|length }}</span>
+                        <span class="stat-label">Resumes Created</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">∞</span>
+                        <span class="stat-label">Possibilities</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-actions">
+                <a href="{{ url_for('home') }}" class="new-resume-btn">
+                    <span>+</span> Create New Resume
+                </a>
             </div>
 
             {% if resumes %}
-            {% for resume in resumes %}
-            <section class="editor-section">
-                <div class="editor-section__body">
-                    <p><strong>{{ resume[1] }}</strong></p>
-                    <p>{{ resume[2] }}</p>
-                    <a href="{{ url_for('edit_resume', id=resume[0]) }}" class="toolbar-button">Edit</a>
+            <div class="resume-grid">
+                {% for resume in resumes %}
+                <div class="resume-card">
+                    <div class="resume-card-icon">📄</div>
+                    <h3>{{ resume[1] }}</h3>
+                    <p>{{ resume[2] if resume[2] else 'No description' }}</p>
+                    <div class="resume-card-meta">
+                        <span>Resume Document</span>
+                        <span>Ready to Edit</span>
+                    </div>
+                    <div class="resume-card-actions">
+                        <a href="{{ url_for('edit_resume', id=resume[0]) }}">✏️ Edit Resume</a>
+                    </div>
                 </div>
-            </section>
-            {% endfor %}
+                {% endfor %}
+            </div>
             {% else %}
-            <section class="editor-section">
-                <div class="editor-section__body">
-                    <p>No resumes saved yet.</p>
-                </div>
-            </section>
+            <div class="empty-state">
+                <div class="empty-state-icon">📝</div>
+                <h2>No Resumes Yet</h2>
+                <p>Start your journey to a perfect resume by creating your first one</p>
+                <a href="{{ url_for('home') }}" class="new-resume-btn">
+                    <span>+</span> Create Your First Resume
+                </a>
+            </div>
             {% endif %}
         </section>
     </main>

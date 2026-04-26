@@ -2,32 +2,268 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Login to ResumeForge - Build your professional resume">
+    <title>Login - ResumeForge</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Floating resume decorations */
+        .floating-elements {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .floating-card {
+            position: absolute;
+            opacity: 0.08;
+            pointer-events: none;
+        }
+
+        .resume-card-1 {
+            width: 280px;
+            height: 360px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-radius: 12px;
+            top: 5%;
+            left: 5%;
+            animation: float 6s ease-in-out infinite;
+            transform: rotate(-15deg);
+        }
+
+        .resume-card-2 {
+            width: 280px;
+            height: 360px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-radius: 12px;
+            bottom: 10%;
+            right: 8%;
+            animation: float 8s ease-in-out infinite reverse;
+            transform: rotate(20deg);
+        }
+
+        .resume-card-3 {
+            width: 280px;
+            height: 360px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-radius: 12px;
+            top: 50%;
+            right: 5%;
+            animation: float 7s ease-in-out infinite;
+            transform: rotate(-10deg);
+        }
+
+        .resume-card-4 {
+            width: 280px;
+            height: 360px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-radius: 12px;
+            bottom: 20%;
+            left: 10%;
+            animation: float 9s ease-in-out infinite reverse;
+            transform: rotate(15deg);
+        }
+
+        .resume-card-header {
+            width: 72%;
+            height: 14px;
+            margin: 20px auto 12px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08);
+        }
+
+        .resume-card-line {
+            width: 80%;
+            height: 10px;
+            margin: 10px auto;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.75);
+        }
+
+        .resume-card-line.short {
+            width: 55%;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px) rotate(var(--rotate, 0deg));
+            }
+            50% {
+                transform: translateY(-30px) rotate(var(--rotate, 0deg));
+            }
+        }
+
+        .resume-card-1 { --rotate: -15deg; }
+        .resume-card-2 { --rotate: 20deg; }
+        .resume-card-3 { --rotate: -10deg; }
+        .resume-card-4 { --rotate: 15deg; }
+
+        .auth-page-wrapper {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            z-index: 10;
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .auth-brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .auth-brand__icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .auth-brand__text {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+
+        .auth-header h1 {
+            margin: 0;
+            color: var(--heading);
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+
+        .auth-header p {
+            margin: 8px 0 0;
+            color: var(--text-muted);
+            font-size: 1rem;
+        }
+
+        .login-container {
+            width: min(420px, calc(100% - 32px));
+            margin: 0 auto;
+        }
+
+        .auth-link {
+            text-align: center;
+            margin-top: 24px;
+            color: var(--text-muted);
+        }
+
+        .auth-link a {
+            color: var(--primary);
+            font-weight: 600;
+            transition: all var(--transition-base);
+            text-decoration: none;
+        }
+
+        .auth-link a:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
+        }
+
+        @media (max-width: 1024px) {
+            .resume-card-1, .resume-card-2, .resume-card-3, .resume-card-4 {
+                opacity: 0.04 !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .floating-elements {
+                display: none;
+            }
+
+            .auth-header h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="login-container">
-        <h2>Login</h2>
+    <div class="floating-elements">
+        <div class="floating-card resume-card-1">
+            <div class="resume-card-header"></div>
+            <div class="resume-card-line"></div>
+            <div class="resume-card-line"></div>
+            <div class="resume-card-line short"></div>
+        </div>
+        <div class="floating-card resume-card-2">
+            <div class="resume-card-header"></div>
+            <div class="resume-card-line"></div>
+            <div class="resume-card-line short"></div>
+        </div>
+        <div class="floating-card resume-card-3">
+            <div class="resume-card-header"></div>
+            <div class="resume-card-line"></div>
+            <div class="resume-card-line"></div>
+        </div>
+        <div class="floating-card resume-card-4">
+            <div class="resume-card-header"></div>
+            <div class="resume-card-line"></div>
+            <div class="resume-card-line short"></div>
+        </div>
+    </div>
 
-        <form method="POST" action="{{ url_for('login') }}">
-            <input type="hidden" name="next" value="{{ next or '' }}">
+    <div class="auth-page-wrapper">
+        <div class="auth-header">
+            <div class="auth-brand">
+                <span class="auth-brand__icon">RF</span>
+                <span class="auth-brand__text">ResumeForge</span>
+            </div>
+            <h1>Welcome Back</h1>
+            <p>Sign in to continue building your amazing resume</p>
+        </div>
 
-            <label>Username:</label>
-            <input type="text" name="username" required>
+        <div class="login-container">
+            <form method="POST" action="{{ url_for('login') }}">
+                <input type="hidden" name="next" value="{{ next or '' }}">
 
-            <label>Password:</label>
-            <input type="password" name="password" required>
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required autofocus placeholder="Enter your username">
 
-            <button type="submit">Login</button>
-        </form>
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required placeholder="Enter your password">
 
-        {% if error %}
-            <p class="error">{{ error }}</p>
-        {% endif %}
+                <button type="submit">Sign In</button>
+            </form>
 
-        <p>Don't have an account?
-            <a href="{{ url_for('signup') }}">Signup here</a>
-        </p>
+            {% if error %}
+                <p class="error">{{ error }}</p>
+            {% endif %}
+
+            <p class="auth-link">
+                Don't have an account? <a href="{{ url_for('signup') }}">Create one here</a>
+            </p>
+        </div>
     </div>
 </body>
 </html>
